@@ -58,7 +58,7 @@ jobs:
       - name: Pijul dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y zstd xxhash
+          sudo apt-get install -y libxxhash-dev libzstd-dev
       - uses: actions-rs/cargo@v1
         with:
           command: install
