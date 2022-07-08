@@ -55,6 +55,10 @@ jobs:
           sudo make install
           which git
           git --version
+      - name: Pijul dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd xxhash
       - uses: actions-rs/cargo@v1
         with:
           command: install
