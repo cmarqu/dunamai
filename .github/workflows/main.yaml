@@ -58,7 +58,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: pijul --version 1.0.0-beta.2
+          args: pijul --version 1.0.0-beta.2 --no-default-features --features keep-changes
       - run: |
           export PATH="$PATH:/opt"
           sudo apt-get install -y darcs bzr
