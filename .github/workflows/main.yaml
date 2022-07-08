@@ -38,6 +38,11 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
       - if: ${{ matrix.git-version != 'default' }}
         run: |
           sudo apt-get install dh-autoreconf libcurl4-gnutls-dev libexpat1-dev gettext libz-dev libssl-dev
@@ -49,6 +54,9 @@ jobs:
           sudo make install
           which git
           git --version
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install pijul --version 1.0.0-beta.2
       - run: |
           export PATH="$PATH:/opt"
           sudo apt-get install -y darcs bzr
