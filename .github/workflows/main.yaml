@@ -74,6 +74,7 @@ jobs:
           git config --global user.name "foo"
           git config --global user.email "foo@example.com"
           bzr whoami 'foo <foo@example.com>'
+          printf '\n' | pijul key generate test
 
           pip install poetry
           poetry install
