@@ -29,7 +29,7 @@ jobs:
           - '3.8'
         git-version:
           - default  # 2.28.0 or newer
-          - '2.21.0'  # https://lore.kernel.org/git/CAKqNo6RJqp94uLMf8Biuo=ZvMZB9Mq6RRMrUgsLW4u1ks+mnOA@mail.gmail.com/T/#u
+          # - '2.21.0'  # https://lore.kernel.org/git/CAKqNo6RJqp94uLMf8Biuo=ZvMZB9Mq6RRMrUgsLW4u1ks+mnOA@mail.gmail.com/T/#u
     name: test (python = ${{ matrix.python-version }}, git = ${{ matrix.git-version }})
     env:
       DARCS_EMAIL: foo <foo@example.com>
@@ -55,15 +55,18 @@ jobs:
           sudo make install
           which git
           git --version
-      - name: Pijul dependencies
+      - if: ${{ matrix.git-version == 'default' }}
+        name: Pijul dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libxxhash-dev libzstd-dev
-      - uses: actions-rs/cargo@v1
+      - if: ${{ matrix.git-version == 'default' }}
+        uses: actions-rs/cargo@v1
         with:
           command: install
           args: pijul --version 1.0.0-beta.2 --no-default-features --features keep-changes
-      - run: |
+      - if: ${{ matrix.git-version == 'default' }}
+        run: |
           export PATH="$PATH:/opt"
           sudo apt-get install -y darcs bzr
 
@@ -71,10 +74,17 @@ jobs:
           curl -L -o ~/fossil.tgz https://github.com/mtkennerly/storage/raw/06e29a4005b24a65bc7d639c0aa1fc152a85d0b7/software/fossil-linux-x64-2.13.tar.gz
           tar -xvf ~/fossil.tgz -C /opt
 
+          bzr whoami 'foo <foo@example.com>'
+
+          echo before pijul key
+          which pijul
+          printf '\n' | pijul key generate test
+          echo after pijul key
+      - run: |
+          export PATH="$PATH:/opt"
+
           git config --global user.name "foo"
           git config --global user.email "foo@example.com"
-          bzr whoami 'foo <foo@example.com>'
-          printf '\n' | pijul key generate test
 
           pip install poetry
           poetry install
