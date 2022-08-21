@@ -59,7 +59,7 @@ jobs:
         name: Pijul dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxxhash-dev libzstd-dev
+          sudo apt-get install -y libxxhash-dev libzstd-dev expect
       - if: ${{ matrix.git-version == 'default' }}
         uses: actions-rs/cargo@v1
         with:
