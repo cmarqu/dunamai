@@ -78,7 +78,7 @@ jobs:
 
           echo before pijul key
           which pijul
-          printf '\n' | pijul key generate test
+          expect -c 'spawn pijul key generate test ; expect "Password for the new key (press enter to leave it unencrypted):" ; send -- "\r" ; expect eof'
           echo after pijul key
       - run: |
           export PATH="$PATH:/opt"
