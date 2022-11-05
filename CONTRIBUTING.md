@@ -10,7 +10,7 @@ Development requires Python 3.6+ because of [Black](https://github.com/ambv/blac
 * After cloning the repository, activate the tooling:
   ```
   poetry install
-  poetry run pre-commit install
+  pre-commit install
   ```
 * Run unit tests:
   ```
