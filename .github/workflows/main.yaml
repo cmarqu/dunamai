@@ -77,7 +77,10 @@ jobs:
           git config --global user.name "foo"
           git config --global user.email "foo@example.com"
           bzr whoami 'foo <foo@example.com>'
-
+      - if: ${{ matrix.python-version == '3.5' || matrix.python-version == '3.6' }}
+        run: |
+          cp poetry.legacy.lock poetry.lock
+      - run: |
           pip install poetry
           poetry install
           poetry run pytest --verbose --cov --cov-report term-missing
