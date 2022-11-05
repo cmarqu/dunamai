@@ -44,6 +44,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - if: ${{ matrix.git-version != 'default' }}
         run: |
           sudo apt-get update

@@ -23,27 +23,18 @@ importlib-metadata = {version = ">=1.6.0", python = "<3.8"}  # 2.1.1 is the last
 
 [tool.poetry.dev-dependencies]
 pytest = [
-    { version = "^7.2", python = "^3.10" },
-    { version = "^3.0", python = ">=3.5,<3.10" },
+    { version = "^7.2", python = "^3.7" },
+    { version = "^3.0", python = ">=3.5,<3.7" },
 ]
 pre-commit = { version = "^2.20", python = "^3.7" }
 pytest-cov = [
-    { version = "^4.0", python = "^3.10" },
-    { version = "^2.6", python = ">=3.5,<3.10" },
+    { version = "^4.0", python = "^3.7" },
+    { version = "^2.6", python = ">=3.5,<3.7" },
 ]
-black = { version = "22.1.0", python = "^3.6.2" }
-flake8 = [
-    { version = "^5.0", python = "^3.10" },
-    { version = "^3.7", python = ">=3.5,<3.10" },
-]
-mypy = [
-    { version = "^0.982", python = "^3.10" },
-    { version = "^0.740", python = ">=3.5,<3.10" },
-]
-pep8-naming = [
-    { version = "^0.12.1", python = "^3.10" },
-    { version = "^0.8.2", python = ">=3.5,<3.10" },
-]
+black = { version = "22.1.0", python = "^3.7" }
+flake8 = { version = "^5.0", python = "^3.7" }
+mypy = { version = "^0.982", python = "^3.7" }
+pep8-naming = { version = "^0.12.1", python = "^3.7" }
 
 [tool.poetry.scripts]
 dunamai = 'dunamai.__main__:main'
