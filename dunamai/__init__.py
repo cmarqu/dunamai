@@ -968,41 +968,62 @@ class Version:
             if msg.strip() != "":
                 dirty = True
 
-        code, msg = _run_cmd(
-            'git for-each-ref "refs/tags/**" --merged {}'.format(tag_branch)
-            + ' --format "%(refname)'
-            "@{%(objectname)"
-            "@{%(creatordate:iso-strict)"
-            "@{%(*committerdate:iso-strict)"
-            "@{%(taggerdate:iso-strict)"
-            '"'
-        )
-        if not msg:
-            try:
-                code, msg = _run_cmd("git rev-list --count HEAD")
-                distance = int(msg)
-            except Exception:
-                distance = 0
-            return cls._fallback(
-                strict,
-                distance=distance,
-                commit=commit,
-                dirty=dirty,
-                branch=branch,
-                timestamp=timestamp,
+        if legacy:
+            code, msg = _run_cmd("git tag --merged HEAD --sort -creatordate")
+            if not msg:
+                try:
+                    code, msg = _run_cmd("git rev-list --count HEAD")
+                    distance = int(msg)
+                except Exception:
+                    distance = 0
+                return cls._fallback(
+                    strict,
+                    distance=distance,
+                    commit=commit,
+                    dirty=dirty,
+                    branch=branch,
+                    timestamp=timestamp,
+                )
+            tags = msg.splitlines()
+            tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
+                pattern, tags, latest_tag
             )
+        else:
+            code, msg = _run_cmd(
+                'git for-each-ref "refs/tags/**" --merged {}'.format(tag_branch)
+                + ' --format "%(refname)'
+                "@{%(objectname)"
+                "@{%(creatordate:iso-strict)"
+                "@{%(*committerdate:iso-strict)"
+                "@{%(taggerdate:iso-strict)"
+                '"'
+            )
+            if not msg:
+                try:
+                    code, msg = _run_cmd("git rev-list --count HEAD")
+                    distance = int(msg)
+                except Exception:
+                    distance = 0
+                return cls._fallback(
+                    strict,
+                    distance=distance,
+                    commit=commit,
+                    dirty=dirty,
+                    branch=branch,
+                    timestamp=timestamp,
+                )
 
-        detailed_tags = []  # type: List[_GitRefInfo]
-        tag_topo_lookup = _GitRefInfo.from_git_tag_topo_order(tag_branch)
+            detailed_tags = []  # type: List[_GitRefInfo]
+            tag_topo_lookup = _GitRefInfo.from_git_tag_topo_order(tag_branch)
 
-        for line in msg.strip().splitlines():
-            parts = line.split("@{")
-            detailed_tags.append(_GitRefInfo(*parts).with_tag_topo_lookup(tag_topo_lookup))
+            for line in msg.strip().splitlines():
+                parts = line.split("@{")
+                detailed_tags.append(_GitRefInfo(*parts).with_tag_topo_lookup(tag_topo_lookup))
 
-        tags = [t.ref for t in sorted(detailed_tags, key=lambda x: x.sort_key, reverse=True)]
-        tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
-            pattern, tags, latest_tag
-        )
+            tags = [t.ref for t in sorted(detailed_tags, key=lambda x: x.sort_key, reverse=True)]
+            tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
+                pattern, tags, latest_tag
+            )
 
         code, msg = _run_cmd("git rev-list --count refs/tags/{}..HEAD".format(tag))
         distance = int(msg)
