@@ -932,6 +932,15 @@ class Version:
         if tag_branch is None:
             tag_branch = "HEAD"
 
+        code, msg = _run_cmd("git version")
+        result = re.search(r"git version (\d+)\.(\d+)", msg.strip())
+        legacy = False
+        if result is not None:
+            major = int(result.group(1))
+            minor = int(result.group(2))
+            if major < 2 or (major == 2 and minor < 7):
+                legacy = True
+
         code, msg = _run_cmd("git symbolic-ref --short HEAD", codes=[0, 128])
         if code == 128:
             branch = None
@@ -946,8 +955,10 @@ class Version:
             return cls._fallback(strict, distance=0, dirty=True, branch=branch)
         commit = msg
 
-        code, msg = _run_cmd('git -c log.showsignature=false log -n 1 --pretty=format:"%cI"')
-        timestamp = _parse_git_timestamp_iso_strict(msg)
+        timestamp = None
+        if not legacy:
+            code, msg = _run_cmd('git -c log.showsignature=false log -n 1 --pretty=format:"%cI"')
+            timestamp = _parse_git_timestamp_iso_strict(msg)
 
         code, msg = _run_cmd("git describe --always --dirty")
         dirty = msg.endswith("-dirty")
