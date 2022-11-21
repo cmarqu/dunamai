@@ -350,7 +350,7 @@ class _GitRefInfo:
         if timestamp == "":
             return None
         else:
-            return _parse_git_timestamp_iso(timestamp)
+            return _parse_git_timestamp_iso_strict(timestamp)
 
     def __repr__(self):
         return (
@@ -876,7 +876,7 @@ class Version:
                 timestamp = None
                 raw_timestamp = data.get("timestamp")
                 if raw_timestamp:
-                    timestamp = _parse_git_timestamp_iso(raw_timestamp)
+                    timestamp = _parse_git_timestamp_iso_strict(raw_timestamp)
 
                 branch = None
                 refs = data.get("refs")
@@ -955,8 +955,10 @@ class Version:
             return cls._fallback(strict, distance=0, dirty=True, branch=branch)
         commit = msg
 
-        code, msg = _run_cmd('git -c log.showsignature=false log -n 1 --pretty=format:"%ci"')
-        timestamp = _parse_git_timestamp_iso(msg)
+        timestamp = None
+        if not legacy:
+            code, msg = _run_cmd('git -c log.showsignature=false log -n 1 --pretty=format:"%cI"')
+            timestamp = _parse_git_timestamp_iso_strict(msg)
 
         code, msg = _run_cmd("git describe --always --dirty")
         dirty = msg.endswith("-dirty")
@@ -966,42 +968,62 @@ class Version:
             if msg.strip() != "":
                 dirty = True
 
-        code, msg = _run_cmd(
-            'git for-each-ref "refs/tags/**"'
-            + (" --merged {}".format(tag_branch) if not legacy else "")
-            + ' --format "%(refname)'
-            "@{%(objectname)"
-            "@{%(creatordate:iso)"
-            "@{%(*committerdate:iso)"
-            "@{%(taggerdate:iso)"
-            '"'
-        )
-        if not msg:
-            try:
-                code, msg = _run_cmd("git rev-list --count HEAD")
-                distance = int(msg)
-            except Exception:
-                distance = 0
-            return cls._fallback(
-                strict,
-                distance=distance,
-                commit=commit,
-                dirty=dirty,
-                branch=branch,
-                timestamp=timestamp,
+        if legacy:
+            code, msg = _run_cmd("git tag --sort -creatordate")
+            if not msg:
+                try:
+                    code, msg = _run_cmd("git rev-list --count HEAD")
+                    distance = int(msg)
+                except Exception:
+                    distance = 0
+                return cls._fallback(
+                    strict,
+                    distance=distance,
+                    commit=commit,
+                    dirty=dirty,
+                    branch=branch,
+                    timestamp=timestamp,
+                )
+            tags = msg.splitlines()
+            tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
+                pattern, tags, latest_tag
             )
+        else:
+            code, msg = _run_cmd(
+                'git for-each-ref "refs/tags/**" --merged {}'.format(tag_branch)
+                + ' --format "%(refname)'
+                "@{%(objectname)"
+                "@{%(creatordate:iso-strict)"
+                "@{%(*committerdate:iso-strict)"
+                "@{%(taggerdate:iso-strict)"
+                '"'
+            )
+            if not msg:
+                try:
+                    code, msg = _run_cmd("git rev-list --count HEAD")
+                    distance = int(msg)
+                except Exception:
+                    distance = 0
+                return cls._fallback(
+                    strict,
+                    distance=distance,
+                    commit=commit,
+                    dirty=dirty,
+                    branch=branch,
+                    timestamp=timestamp,
+                )
 
-        detailed_tags = []  # type: List[_GitRefInfo]
-        tag_topo_lookup = _GitRefInfo.from_git_tag_topo_order(tag_branch)
+            detailed_tags = []  # type: List[_GitRefInfo]
+            tag_topo_lookup = _GitRefInfo.from_git_tag_topo_order(tag_branch)
 
-        for line in msg.strip().splitlines():
-            parts = line.split("@{")
-            detailed_tags.append(_GitRefInfo(*parts).with_tag_topo_lookup(tag_topo_lookup))
+            for line in msg.strip().splitlines():
+                parts = line.split("@{")
+                detailed_tags.append(_GitRefInfo(*parts).with_tag_topo_lookup(tag_topo_lookup))
 
-        tags = [t.ref for t in sorted(detailed_tags, key=lambda x: x.sort_key, reverse=True)]
-        tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
-            pattern, tags, latest_tag
-        )
+            tags = [t.ref for t in sorted(detailed_tags, key=lambda x: x.sort_key, reverse=True)]
+            tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
+                pattern, tags, latest_tag
+            )
 
         code, msg = _run_cmd("git rev-list --count refs/tags/{}..HEAD".format(tag))
         distance = int(msg)
@@ -1101,7 +1123,7 @@ class Version:
         commit = msg if set(msg) != {"0"} else None
 
         code, msg = _run_cmd('hg log --limit 1 --template "{date|rfc3339date}"')
-        timestamp = _parse_hg_timestamp_rfc3339(msg) if msg != "" else None
+        timestamp = _parse_git_timestamp_iso_strict(msg) if msg != "" else None
 
         code, msg = _run_cmd(
             'hg log -r "sort(tag(){}, -rev)" --template "{{join(tags, \':\')}}\\n"'.format(
@@ -1927,16 +1949,10 @@ def bump_version(base: str, index: int = -1) -> str:
     return ".".join(str(x) for x in bases)
 
 
-def _parse_git_timestamp_iso(raw: str) -> dt.datetime:
-    # Remove colon from timezone offset for pre-3.7 Python:
-    compat = re.sub(r"(.* .* [-+]\d+):(\d+)", r"\1\2", raw)
-    return dt.datetime.strptime(compat, "%Y-%m-%d %H:%M:%S %z")
-
-
-def _parse_hg_timestamp_rfc3339(raw: str) -> dt.datetime:
+def _parse_git_timestamp_iso_strict(raw: str) -> dt.datetime:
     # Remove colon from timezone offset for pre-3.7 Python:
     compat = re.sub(r"(.*T.*[-+]\d+):(\d+)", r"\1\2", raw)
-    return dt.datetime.strptime(compat, "%Y-%m-%d%H:%M:%S%z")
+    return dt.datetime.strptime(compat, "%Y-%m-%dT%H:%M:%S%z")
 
 
 def _parse_timestamp(raw: str, space: bool = False) -> dt.datetime:

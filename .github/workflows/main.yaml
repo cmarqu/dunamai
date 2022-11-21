@@ -63,7 +63,6 @@ jobs:
           sudo make install
           which git
           git --version
-          git help log
       - run: |
           export PATH="$PATH:/opt"
           sudo apt-get update
