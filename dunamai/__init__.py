@@ -969,7 +969,9 @@ class Version:
                 dirty = True
 
         if legacy:
-            code, msg = _run_cmd("git tag --sort -creatordate")
+            code, msg = _run_cmd(
+                'git for-each-ref "refs/tags/**" --format "%(refname)" --sort -creatordate'
+            )
             if not msg:
                 try:
                     code, msg = _run_cmd("git rev-list --count HEAD")
@@ -984,7 +986,7 @@ class Version:
                     branch=branch,
                     timestamp=timestamp,
                 )
-            tags = msg.splitlines()
+            tags = [line.replace("refs/tags/", "") for line in msg.splitlines()]
             tag, base, stage, unmatched, tagged_metadata, epoch = _match_version_pattern(
                 pattern, tags, latest_tag
             )
