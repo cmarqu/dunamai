@@ -956,7 +956,10 @@ class Version:
         commit = msg
 
         timestamp = None
-        if not legacy:
+        if legacy:
+            code, msg = _run_cmd('git log -n 1 --pretty=format:"%ci"')
+            timestamp = _parse_git_timestamp_iso(msg)
+        else:
             code, msg = _run_cmd('git -c log.showsignature=false log -n 1 --pretty=format:"%cI"')
             timestamp = _parse_git_timestamp_iso_strict(msg)
 
@@ -1955,6 +1958,12 @@ def _parse_git_timestamp_iso_strict(raw: str) -> dt.datetime:
     # Remove colon from timezone offset for pre-3.7 Python:
     compat = re.sub(r"(.*T.*[-+]\d+):(\d+)", r"\1\2", raw)
     return dt.datetime.strptime(compat, "%Y-%m-%dT%H:%M:%S%z")
+
+
+def _parse_git_timestamp_iso(raw: str) -> dt.datetime:
+    # Remove colon from timezone offset for pre-3.7 Python:
+    compat = re.sub(r"(.* .* [-+]\d+):(\d+)", r"\1\2", raw)
+    return dt.datetime.strptime(compat, "%Y-%m-%d %H:%M:%S %z")
 
 
 def _parse_timestamp(raw: str, space: bool = False) -> dt.datetime:
