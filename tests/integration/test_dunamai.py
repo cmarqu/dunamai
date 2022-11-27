@@ -8,7 +8,7 @@ from typing import Callable, Iterator, Optional
 
 import pytest
 
-from dunamai import Version, Vcs, _run_cmd
+from dunamai import Version, Vcs, _is_git_legacy, _run_cmd
 
 
 def avoid_identical_ref_timestamps() -> None:
@@ -73,6 +73,7 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
     run = make_run_callback(vcs)
     from_vcs = make_from_callback(Version.from_git)
     b = "master"
+    legacy = _is_git_legacy()
 
     with chdir(vcs):
         run("git init")
@@ -136,9 +137,10 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
             'dunamai from any --format "{commit}" --full-commit'
         )
 
-        # Verify tags with '/' work
-        run("git tag test/v0.1.0")
-        assert run(r'dunamai from any --pattern "^test/v(?P<base>\d\.\d\.\d)"') == "0.1.0"
+        if not legacy:
+            # Verify tags with '/' work
+            run("git tag test/v0.1.0")
+            assert run(r'dunamai from any --pattern "^test/v(?P<base>\d\.\d\.\d)"') == "0.1.0"
 
         (vcs / "foo.txt").write_text("bye")
         assert from_vcs() == Version("0.1.0", dirty=True, branch=b)

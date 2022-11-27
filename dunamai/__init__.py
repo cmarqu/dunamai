@@ -266,6 +266,17 @@ def _equal_if_set(x: _T, y: Optional[_T], unset: Sequence[Any] = (None,)) -> boo
     return x == y
 
 
+def _is_git_legacy() -> bool:
+    _, msg = _run_cmd("git version")
+    result = re.search(r"git version (\d+)\.(\d+)", msg.strip())
+    if result is not None:
+        major = int(result.group(1))
+        minor = int(result.group(2))
+        if major < 2 or (major == 2 and minor < 7):
+            return True
+    return False
+
+
 def _detect_vcs(expected_vcs: Optional[Vcs] = None) -> Vcs:
     checks = OrderedDict(
         [
@@ -932,14 +943,7 @@ class Version:
         if tag_branch is None:
             tag_branch = "HEAD"
 
-        code, msg = _run_cmd("git version")
-        result = re.search(r"git version (\d+)\.(\d+)", msg.strip())
-        legacy = False
-        if result is not None:
-            major = int(result.group(1))
-            minor = int(result.group(2))
-            if major < 2 or (major == 2 and minor < 7):
-                legacy = True
+        legacy = _is_git_legacy()
 
         code, msg = _run_cmd("git symbolic-ref --short HEAD", codes=[0, 128])
         if code == 128:
