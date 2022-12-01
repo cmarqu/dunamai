@@ -156,12 +156,14 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
             from_vcs(latest_tag=True)
 
         # check that we find the expected tag that has the most recent tag creation time
-        avoid_identical_ref_timestamps()
-        run("git tag v0.2.0b1 -m Annotated")
-        avoid_identical_ref_timestamps()
+        if not legacy:
+            avoid_identical_ref_timestamps()
+            run("git tag v0.2.0b1 -m Annotated")
+            avoid_identical_ref_timestamps()
         run("git tag v0.2.0 -m Annotated")
-        avoid_identical_ref_timestamps()
-        run("git tag v0.1.1 HEAD~1 -m Annotated")
+        if not legacy:
+            avoid_identical_ref_timestamps()
+            run("git tag v0.1.1 HEAD~1 -m Annotated")
         assert from_vcs() == Version("0.2.0", dirty=False, branch=b)
         assert from_vcs(latest_tag=True) == Version("0.2.0", dirty=False, branch=b)
 

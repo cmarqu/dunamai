@@ -266,15 +266,18 @@ def _equal_if_set(x: _T, y: Optional[_T], unset: Sequence[Any] = (None,)) -> boo
     return x == y
 
 
-def _is_git_legacy() -> bool:
+def _get_git_version() -> List[int]:
     _, msg = _run_cmd("git version")
-    result = re.search(r"git version (\d+)\.(\d+)", msg.strip())
+    result = re.search(r"git version (\d+(\.\d+)*)", msg.strip())
     if result is not None:
-        major = int(result.group(1))
-        minor = int(result.group(2))
-        if major < 2 or (major == 2 and minor < 7):
-            return True
-    return False
+        parts = result.group(1).split(".")
+        return [int(x) for x in parts]
+    return []
+
+
+def _is_git_legacy() -> bool:
+    version = _get_git_version()
+    return version < [2, 7]
 
 
 def _detect_vcs(expected_vcs: Optional[Vcs] = None) -> Vcs:
