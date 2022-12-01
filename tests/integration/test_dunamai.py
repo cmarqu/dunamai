@@ -174,9 +174,10 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
         assert from_vcs() == Version("0.2.0", dirty=False, branch="heads/v0.2.0")
         assert from_vcs(latest_tag=True) == Version("0.2.0", dirty=False, branch="heads/v0.2.0")
 
-        run("git checkout v0.1.0")
-        assert from_vcs() == Version("0.1.1", dirty=False)
-        assert from_vcs(latest_tag=True) == Version("0.1.1", dirty=False)
+        if not legacy:
+            run("git checkout v0.1.0")
+            assert from_vcs() == Version("0.1.1", dirty=False)
+            assert from_vcs(latest_tag=True) == Version("0.1.1", dirty=False)
 
         # Additional one-off check not in other VCS integration tests:
         run("git checkout master")
