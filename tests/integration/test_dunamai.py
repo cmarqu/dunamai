@@ -192,9 +192,10 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
         # bumping:
         commit = run('dunamai from any --format "{commit}"')
         assert run("dunamai from any --bump") == "0.2.1.dev1+{}".format(commit)
-        # tag with pre-release segment.
-        run("git tag v0.2.1b3 -m Annotated")
-        assert from_vcs() == Version("0.2.1", stage=("b", 3), dirty=False, branch=b)
+        if not legacy:
+            # tag with pre-release segment.
+            run("git tag v0.2.1b3 -m Annotated")
+            assert from_vcs() == Version("0.2.1", stage=("b", 3), dirty=False, branch=b)
 
         if not legacy:
             # Additional one-off check: tag containing comma.
