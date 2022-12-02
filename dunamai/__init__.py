@@ -277,7 +277,7 @@ def _get_git_version() -> List[int]:
 
 def _is_git_legacy() -> bool:
     version = _get_git_version()
-    return version < [2, 7]
+    return version < [2, 0]
 
 
 def _detect_vcs(expected_vcs: Optional[Vcs] = None) -> Vcs:
