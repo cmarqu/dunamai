@@ -958,7 +958,7 @@ class Version:
         commit = msg
 
         timestamp = None
-        if git_version < [2, 0]:
+        if git_version < [1, 9]:
             code, msg = _run_cmd('git log -n 1 --pretty=format:"%ci"')
             timestamp = _parse_git_timestamp_iso(msg)
         else:

@@ -30,7 +30,7 @@ def chdir(where: Path) -> Iterator[None]:
 
 def is_git_legacy() -> bool:
     version = _get_git_version()
-    return version < [2, 0]
+    return version < [2, 7]
 
 
 def make_run_callback(where: Path) -> Callable:
