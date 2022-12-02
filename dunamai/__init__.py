@@ -275,11 +275,6 @@ def _get_git_version() -> List[int]:
     return []
 
 
-def _is_git_legacy() -> bool:
-    version = _get_git_version()
-    return version < [2, 0]
-
-
 def _detect_vcs(expected_vcs: Optional[Vcs] = None) -> Vcs:
     checks = OrderedDict(
         [
@@ -946,7 +941,7 @@ class Version:
         if tag_branch is None:
             tag_branch = "HEAD"
 
-        legacy = _is_git_legacy()
+        git_version = _get_git_version()
 
         code, msg = _run_cmd("git symbolic-ref --short HEAD", codes=[0, 128])
         if code == 128:
@@ -963,7 +958,7 @@ class Version:
         commit = msg
 
         timestamp = None
-        if legacy:
+        if git_version < [2, 0]:
             code, msg = _run_cmd('git log -n 1 --pretty=format:"%ci"')
             timestamp = _parse_git_timestamp_iso(msg)
         else:
@@ -978,7 +973,7 @@ class Version:
             if msg.strip() != "":
                 dirty = True
 
-        if legacy:
+        if git_version < [2, 7]:
             code, msg = _run_cmd(
                 'git for-each-ref "refs/tags/**" --format "%(refname)" --sort -creatordate'
             )

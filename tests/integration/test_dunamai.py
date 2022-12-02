@@ -8,7 +8,7 @@ from typing import Callable, Iterator, Optional
 
 import pytest
 
-from dunamai import Version, Vcs, _is_git_legacy, _run_cmd
+from dunamai import Version, Vcs, _get_git_version, _run_cmd
 
 
 def avoid_identical_ref_timestamps() -> None:
@@ -26,6 +26,11 @@ def chdir(where: Path) -> Iterator[None]:
         yield
     finally:
         os.chdir(str(start))
+
+
+def is_git_legacy() -> bool:
+    version = _get_git_version()
+    return version < [2, 0]
 
 
 def make_run_callback(where: Path) -> Callable:
@@ -73,7 +78,7 @@ def test__version__from_git__with_annotated_tags(tmp_path) -> None:
     run = make_run_callback(vcs)
     from_vcs = make_from_callback(Version.from_git)
     b = "master"
-    legacy = _is_git_legacy()
+    legacy = is_git_legacy()
 
     with chdir(vcs):
         run("git init")
@@ -207,7 +212,7 @@ def test__version__from_git__with_lightweight_tags(tmp_path) -> None:
     run = make_run_callback(vcs)
     from_vcs = make_from_callback(Version.from_git)
     b = "master"
-    legacy = _is_git_legacy()
+    legacy = is_git_legacy()
 
     with chdir(vcs):
         run("git init")
@@ -287,7 +292,7 @@ def test__version__from_git__with_nonchronological_commits(tmp_path) -> None:
     run = make_run_callback(vcs)
     from_vcs = make_from_callback(Version.from_git, chronological=False)
     b = "master"
-    legacy = _is_git_legacy()
+    legacy = is_git_legacy()
 
     with chdir(vcs):
         run("git init")
@@ -323,7 +328,7 @@ def test__version__from_git__with_nonchronological_commits(tmp_path) -> None:
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="Requires Git")
-@pytest.mark.skipif(_is_git_legacy(), reason="Requires non-legacy Git")
+@pytest.mark.skipif(is_git_legacy(), reason="Requires non-legacy Git")
 def test__version__from_git__gitflow(tmp_path) -> None:
     vcs = tmp_path / "dunamai-git-gitflow"
     vcs.mkdir()
